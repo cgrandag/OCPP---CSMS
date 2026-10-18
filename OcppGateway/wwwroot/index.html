@@ -1,0 +1,744 @@
+<!DOCTYPE html>
+<html lang="es">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>OCPP Gateway | Dashboard</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Outfit:wght@300;400;600&display=swap" rel="stylesheet">
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css"
+        integrity="sha256-p4NxAoJBhIIN+hmNHrzRCf9tD/miZyoHS5obTRR9BMY=" crossorigin="" />
+    <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"
+        integrity="sha256-20nQCchB9co0qIjJZRGuk2/Z9VM+kNiyxNV1lvTlZBo=" crossorigin=""></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
+    <link rel="stylesheet" href="style.css?v=9">
+</head>
+
+<body>
+    <div class="background-glow"></div>
+
+    <div id="login-container"
+        style="display:flex; position:fixed; top:0; left:0; width:100%; height:100%; z-index:9999; background:#0d1117; align-items:center; justify-content:center; flex-direction:column;">
+        <div class="glass-panel" style="width: 350px; text-align: center; padding: 40px;">
+            <div style="font-size: 3rem; margin-bottom: 10px;">⚡</div>
+            <h2 style="margin-bottom: 5px; color: var(--text-color);">OCPP Gateway</h2>
+            <p style="color: #8b949e; margin-bottom: 25px;">Inicia sesión para continuar</p>
+
+            <form id="loginForm" onsubmit="event.preventDefault(); login();">
+                <input type="text" id="loginUsername" placeholder="Usuario" required
+                    style="width: 100%; padding: 12px; margin-bottom: 15px; background: rgba(0,0,0,0.3); border: 1px solid rgba(255,255,255,0.1); border-radius: 8px; color: white; box-sizing: border-box;">
+
+                <input type="password" id="loginPassword" placeholder="Contraseña" required
+                    style="width: 100%; padding: 12px; margin-bottom: 25px; background: rgba(0,0,0,0.3); border: 1px solid rgba(255,255,255,0.1); border-radius: 8px; color: white; box-sizing: border-box;">
+
+                <button type="submit" class="btn-refresh"
+                    style="width: 100%; background: var(--accent-color); padding: 12px;">Ingresar</button>
+            </form>
+            <p id="loginErrorMsg" style="color: var(--error-color); margin-top: 15px; display: none;"></p>
+        </div>
+    </div>
+
+    <div class="app-layout" id="app-layout" style="display:none;">
+        <aside class="sidebar">
+            <div class="sidebar-logo">
+                ⚡ OCPP Gateway <span class="badge">BETA</span>
+            </div>
+
+            <nav class="sidebar-nav">
+                <a href="#" class="sidebar-link active" id="nav-overview" onclick="switchTab('overview')">
+                    <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none"
+                        stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                        <rect x="3" y="3" width="7" height="7"></rect>
+                        <rect x="14" y="3" width="7" height="7"></rect>
+                        <rect x="14" y="14" width="7" height="7"></rect>
+                        <rect x="3" y="14" width="7" height="7"></rect>
+                    </svg>
+                    Visión General
+                </a>
+
+                <div class="sidebar-section">GESTIÓN DE CARGADORES</div>
+
+                <a href="#" class="sidebar-link" id="nav-chargers" onclick="switchTab('chargers')">
+                    <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none"
+                        stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                        <path d="M5 12h14"></path>
+                        <path d="M12 5v14"></path>
+                        <path d="M18 19V6a2 2 0 0 0-2-2H8a2 2 0 0 0-2 2v13"></path>
+                        <path d="M4 19h16"></path>
+                    </svg>
+                    Cargadores
+                </a>
+
+                <a href="#" class="sidebar-link" id="nav-map" onclick="switchTab('map')">
+                    <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none"
+                        stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                        <polygon points="3 6 9 3 15 6 21 3 21 18 15 21 9 18 3 21"></polygon>
+                        <line x1="9" y1="3" x2="9" y2="21"></line>
+                        <line x1="15" y1="3" x2="15" y2="21"></line>
+                    </svg>
+                    Mapa
+                </a>
+
+                <div class="sidebar-section">ADMINISTRACIÓN</div>
+
+                <a href="#" class="sidebar-link" id="nav-assets" onclick="switchTab('assets')" style="display:none;">
+                    <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none"
+                        stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                        <polygon points="12 2 2 7 12 12 22 7 12 2"></polygon>
+                        <polyline points="2 17 12 22 22 17"></polyline>
+                        <polyline points="2 12 12 17 22 12"></polyline>
+                    </svg>
+                    Gestión de Activos
+                </a>
+                <a href="#" class="sidebar-link" id="nav-tariffs" onclick="switchTab('tariffs')">
+                    <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none"
+                        stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                        <line x1="12" y1="1" x2="12" y2="23"></line>
+                        <path d="M17 5H9.5a3.5 3.5 0 0 0 0 7h5a3.5 3.5 0 0 1 0 7H6"></path>
+                    </svg>
+                    Precios
+                </a>
+
+                <a href="#" class="sidebar-link">
+                    <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none"
+                        stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                        <rect x="4" y="2" width="16" height="20" rx="2" ry="2"></rect>
+                        <path d="M9 22v-4h6v4"></path>
+                        <path d="M8 6h.01"></path>
+                        <path d="M16 6h.01"></path>
+                        <path d="M12 6h.01"></path>
+                        <path d="M12 10h.01"></path>
+                        <path d="M12 14h.01"></path>
+                        <path d="M16 10h.01"></path>
+                        <path d="M16 14h.01"></path>
+                        <path d="M8 10h.01"></path>
+                        <path d="M8 14h.01"></path>
+                    </svg>
+                    Compañía
+                </a>
+
+                <a href="#" class="sidebar-link">
+                    <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none"
+                        stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                        <line x1="12" y1="1" x2="12" y2="23"></line>
+                        <path d="M17 5H9.5a3.5 3.5 0 0 0 0 7h5a3.5 3.5 0 0 1 0 7H6"></path>
+                    </svg>
+                    Pagos
+                </a>
+
+                <a href="#" class="sidebar-link" id="nav-acceso" onclick="switchTab('acceso')">
+                    <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none"
+                        stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                        <rect x="3" y="11" width="18" height="11" rx="2" ry="2"></rect>
+                        <path d="M7 11V7a5 5 0 0 1 10 0v4"></path>
+                    </svg>
+                    Acceso
+                </a>
+
+                <a href="#" class="sidebar-link" id="nav-clients" onclick="switchTab('clients')">
+                    <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none"
+                        stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                        <rect x="2" y="5" width="20" height="14" rx="2" ry="2"></rect>
+                        <line x1="2" y1="10" x2="22" y2="10"></line>
+                    </svg>
+                    Clientes (RFID)
+                </a>
+
+                <div class="sidebar-section">RECURSOS</div>
+
+                <a href="#" class="sidebar-link">
+                    <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none"
+                        stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                        <path d="M2 3h6a4 4 0 0 1 4 4v14a3 3 0 0 0-3-3H2z"></path>
+                        <path d="M22 3h-6a4 4 0 0 0-4 4v14a3 3 0 0 1 3-3h7z"></path>
+                    </svg>
+                    Aprendizaje
+                </a>
+
+                <a href="#" class="sidebar-link">
+                    <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none"
+                        stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                        <circle cx="12" cy="12" r="10"></circle>
+                        <path d="M9.09 9a3 3 0 0 1 5.83 1c0 2-3 3-3 3"></path>
+                        <line x1="12" y1="17" x2="12.01" y2="17"></line>
+                    </svg>
+                    Ayuda
+                </a>
+            </nav>
+            <div class="sidebar-section">SEGURO</div>
+
+            <a href="#" class="sidebar-link" onclick="logout()" style="color:var(--error-color)">
+                <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none"
+                    stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                    <path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4"></path>
+                    <polyline points="16 17 21 12 16 7"></polyline>
+                    <line x1="21" y1="12" x2="9" y2="12"></line>
+                </svg>
+                Cerrar Sesión
+            </a>
+        </aside>
+
+        <main class="main-content">
+            <div class="container">
+                <header class="page-header" id="page-header">
+                    <h1 id="page-title">Visión General</h1>
+                    <p id="page-subtitle">Métricas resumidas y desempeño financiero del ecosistema.</p>
+                </header>
+
+                <section id="sec-overview" class="view-section">
+                    <div class="overview-grid">
+                        <div class="glass-panel chart-card donut-card">
+                            <h3>Estado de cargadores</h3>
+                            <div class="donut-container">
+                                <canvas id="statusChart"></canvas>
+                            </div>
+                        </div>
+
+                        <div class="glass-panel kpi-container">
+                            <div class="kpi-card">
+                                <span>Tarifas cobradas</span>
+                                <h2 id="kpi-fees">$0.00</h2>
+                            </div>
+                            <div class="kpi-card separator"></div>
+                            <div class="kpi-card">
+                                <span>Energía usada</span>
+                                <h2 id="kpi-energy">0 kWh</h2>
+                            </div>
+                            <div class="kpi-card separator"></div>
+                            <div class="kpi-card">
+                                <span>Sesiones</span>
+                                <h2 id="kpi-sessions">0</h2>
+                            </div>
+                        </div>
+
+                        <div class="glass-panel chart-card bar-card">
+                            <div class="panel-header">
+                                <div class="chart-tabs">
+                                    <button class="tab-btn active">Tarifas cobradas</button>
+                                    <button class="tab-btn">Energía usada</button>
+                                    <button class="tab-btn">Sesiones</button>
+                                </div>
+                                <button class="btn-refresh" onclick="exportChartDataToExcel()">📥 Excel</button>
+                            </div>
+                            <div class="bar-container">
+                                <canvas id="monthlyChart"></canvas>
+                            </div>
+                        </div>
+
+                        <div class="glass-panel">
+                            <div class="panel-header">
+                                <h3>Sesiones recientes</h3>
+                                <button class="btn-refresh" onclick="exportRecentSessionsToExcel()">📥 Excel</button>
+                            </div>
+                            <div class="table-container">
+                                <table id="recentSessionsTable">
+                                    <thead>
+                                        <tr>
+                                            <th>Tipo Autenticación</th>
+                                            <th>Ubicación</th>
+                                            <th>Cargador</th>
+                                            <th>Hora de inicio</th>
+                                            <th>Estado</th>
+                                            <th>Energía usada</th>
+                                            <th>Costo</th>
+                                        </tr>
+                                    </thead>
+                                    <tbody id="recentSessionsBody">
+                                        <tr>
+                                            <td colspan="7" class="loading-text">Cargando datos...</td>
+                                        </tr>
+                                    </tbody>
+                                </table>
+                            </div>
+                        </div>
+                    </div>
+                </section>
+
+                <section id="sec-chargers" class="view-section" style="display:none;">
+                    <div class="glass-panel">
+                        <div class="panel-header">
+                            <h2>Cargadores Conectados</h2>
+                            <div class="filter-bar" style="display:flex; gap:10px;">
+                                <button class="btn-filter active" onclick="setFilter('todos')">Todos (<span
+                                        id="count-todos">0</span>)</button>
+                                <button class="btn-filter" onclick="setFilter('offline')">Solo Offline (<span
+                                        id="count-offline">0</span>)</button>
+                                <button class="btn-filter" onclick="setFilter('charging')">Cargando (<span
+                                        id="count-charging">0</span>)</button>
+                                <button class="btn-filter" onclick="setFilter('errors')">Con Errores (<span
+                                        id="count-errors">0</span>)</button>
+                            </div>
+                            <div style="display:flex; gap:10px;">
+                                <button class="btn-refresh" style="background:var(--accent-color)"
+                                    onclick="openScanner()">📱 Escanear QR</button>
+                                <button class="btn-refresh" onclick="fetchChargers()">🔄 Actualizar</button>
+                            </div>
+                        </div>
+
+                        <div class="table-container">
+                            <table id="chargersTable">
+                                <thead>
+                                    <tr>
+                                        <th>Nombre</th>
+                                        <th>Estado / Red</th>
+                                        <th>Problema</th>
+                                        <th>Potencia Act.</th>
+                                        <th>Modelo/FW</th>
+                                        <th>Conector</th>
+                                        <th>Info Adicional</th>
+                                        <th>Últ. Conexión</th>
+                                        <th>Acciones</th>
+                                    </tr>
+                                </thead>
+                                <tbody>
+                                    <tr>
+                                        <td colspan="9" class="loading-text">Cargando datos...</td>
+                                    </tr>
+                                </tbody>
+                            </table>
+                        </div>
+                    </div>
+                </section>
+
+                <section id="sec-map" class="view-section" style="display:none;">
+                    <div class="glass-panel"
+                        style="padding: 0; overflow: hidden; display: flex; flex-direction: column;">
+                        <div class="panel-header"
+                            style="position: absolute; z-index: 1000; background: rgba(13, 17, 23, 0.8); backdrop-filter: blur(10px); width: calc(100% - 40px); margin: 20px; border-radius: 8px; border: 1px solid rgba(255,255,255,0.1);">
+                            <h2>Mapa de Cargadores</h2>
+                            <button class="btn-refresh" onclick="fetchChargers()">🔄 Actualizar</button>
+                        </div>
+                        <div id="chargers-map" style="height: 600px; width: 100%;"></div>
+                    </div>
+                </section>
+                </section>
+
+                <section id="sec-acceso" class="view-section" style="display:none;">
+                    <div class="glass-panel">
+                        <div class="panel-header">
+                            <h2>Gestión de Accesos (Personal del Sistema)</h2>
+                            <div style="display:flex; gap:10px;">
+                                <button class="btn-refresh" style="background:var(--accent-color)"
+                                    onclick="openAdminModal()">+ Nuevo Personal</button>
+                                <button class="btn-refresh" onclick="fetchAdmins()">🔄 Actualizar</button>
+                            </div>
+                        </div>
+
+                        <div class="table-container">
+                            <table id="adminsTable">
+                                <thead>
+                                    <tr>
+                                        <th>ID</th>
+                                        <th>Nombre de Usuario</th>
+                                        <th>Email</th>
+                                        <th>Rol</th>
+                                        <th>Acciones</th>
+                                    </tr>
+                                </thead>
+                                <tbody>
+                                    <tr>
+                                        <td colspan="5" class="loading-text">Cargando datos...</td>
+                                    </tr>
+                                </tbody>
+                            </table>
+                        </div>
+                    </div>
+                </section>
+
+                <section id="sec-clients" class="view-section" style="display:none;">
+                    <div class="glass-panel">
+                        <div class="panel-header">
+                            <h2>Gestión de Clientes y Tarjetas RFID</h2>
+                            <div style="display:flex; gap:10px;">
+                                <button class="btn-refresh" style="background:var(--accent-color)"
+                                    onclick="openClientModal()">+ Nuevo Cliente</button>
+                                <button class="btn-refresh" onclick="fetchClients()">🔄 Actualizar</button>
+                            </div>
+                        </div>
+
+                        <div class="table-container">
+                            <table id="clientsTable">
+                                <thead>
+                                    <tr>
+                                        <th>ID</th>
+                                        <th>Nombre (Cliente)</th>
+                                        <th>Email</th>
+                                        <th>IdTag (RFID)</th>
+                                        <th>Autorizado</th>
+                                        <th>Tarifa</th>
+                                        <th>Acciones</th>
+                                    </tr>
+                                </thead>
+                                <tbody>
+                                    <tr>
+                                        <td colspan="7" class="loading-text">Cargando datos...</td>
+                                    </tr>
+                                </tbody>
+                            </table>
+                        </div>
+                    </div>
+                </section>
+
+                <section id="sec-assets" class="view-section" style="display:none;">
+                    <div class="glass-panel">
+                        <div class="panel-header">
+                            <h2>Gestión de Activos (Cargadores)</h2>
+                            <div style="display:flex; gap:10px;">
+                                <button class="btn-refresh" style="background:var(--accent-color)"
+                                    onclick="openAssetModal()">+ Nuevo Cargador</button>
+                                <button class="btn-refresh" onclick="fetchAssets()">🔄 Actualizar</button>
+                            </div>
+                        </div>
+
+                        <div class="table-container">
+                            <table id="assetsTable">
+                                <thead>
+                                    <tr>
+                                        <th>ChargePoint ID</th>
+                                        <th>Nombre</th>
+                                        <th>Identificador Físico</th>
+                                        <th>Ubicación</th>
+                                        <th>Coordenadas</th>
+                                        <th>Modelo</th>
+                                        <th>Tarifa</th>
+                                        <th>Acciones</th>
+                                    </tr>
+                                </thead>
+                                <tbody id="assetsTableBody">
+                                    <tr>
+                                        <td colspan="7" class="loading-text">Cargando datos...</td>
+                                    </tr>
+                                </tbody>
+                            </table>
+                        </div>
+                    </div>
+                </section>
+
+                <section id="sec-tariffs" class="view-section" style="display:none;">
+                    <div class="overview-grid" style="grid-template-columns: 1fr;">
+                        <div class="glass-panel dashboard-card">
+                            <h3>Gestión de Precios</h3>
+                            <p style="color:#8b949e; font-size:0.9em; margin-bottom: 20px;">Configura aquí las
+                                estructuras de cobro que luego asignarás a cada cargador.</p>
+                            <button class="btn-refresh" onclick="openTariffModal()">✚ Nueva Tarifa</button>
+                        </div>
+                    </div>
+
+                    <div class="glass-panel" style="margin-top:20px;">
+                        <div class="table-container">
+                            <table id="tariffsTable">
+                                <thead>
+                                    <tr>
+                                        <th>ID</th>
+                                        <th>Nombre de Tarifa</th>
+                                        <th>Precio / kWh</th>
+                                        <th>Precio / Minuto</th>
+                                        <th>Cargo Fijo (Conexión)</th>
+                                        <th>Acciones</th>
+                                    </tr>
+                                </thead>
+                                <tbody>
+                                </tbody>
+                            </table>
+                        </div>
+                    </div>
+                </section>
+        </main>
+    </div>
+
+    <div id="historyModal" class="modal-overlay" style="display:none;">
+        <div class="glass-panel modal-content">
+            <div class="panel-header">
+                <h2>Historial de Carga</h2>
+                <div>
+                    <button class="btn-refresh" style="background:#238636; margin-right:10px;"
+                        onclick="downloadHistory()">📥 Excel</button>
+                    <button class="btn-refresh" onclick="closeHistory()">Cerrar ❌</button>
+                </div>
+            </div>
+            <div class="table-container" style="max-height: 400px; overflow-y: auto;">
+                <table id="historyTable">
+                    <thead>
+                        <tr>
+                            <th>Inició</th>
+                            <th>Terminó</th>
+                            <th>Duración</th>
+                            <th>Energía (kWh)</th>
+                            <th>Razón Stop</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                    </tbody>
+                </table>
+            </div>
+        </div>
+    </div>
+
+    <div id="scannerModal" class="modal-overlay" style="display:none;">
+        <div class="glass-panel modal-content" style="max-width: 500px; text-align: center;">
+            <div class="panel-header" style="justify-content: center;">
+                <h2>📱 Simulador de Escaneo QR</h2>
+            </div>
+            <div style="padding: 20px 0;">
+                <p style="color: #8b949e; margin-bottom: 20px;">Ingresa el identificador físico del cargador (ej.
+                    CH-001)</p>
+                <input type="text" id="scanInput" placeholder="Identificador / Slug..."
+                    style="width:80%; padding:10px; border-radius:8px; border:1px solid rgba(255,255,255,0.2); background:rgba(0,0,0,0.3); color:white; font-size:1.1rem; text-align:center; margin-bottom: 20px;">
+
+                <div id="scanResult" style="min-height: 60px; margin-bottom: 20px;">
+                </div>
+
+                <div style="display: flex; justify-content: center; gap: 15px;">
+                    <button class="btn-refresh" onclick="simulateScan()">🔍 Buscar / Escanear</button>
+                    <button class="btn-refresh" style="background:var(--error-color)" onclick="closeScanner()">❌
+                        Cancelar</button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <div id="logsDrawer" class="logs-drawer">
+        <div class="drawer-header">
+            <div>
+                <h3 style="margin:0; font-size:1.1em; font-weight:600;">📡 Logs en Tiempo Real</h3>
+                <span id="logsChargerId" style="font-size:0.85em; color:var(--accent-color);"></span>
+            </div>
+            <div style="display:flex; align-items:center; gap:10px;">
+                <label style="font-size:0.85em; display:flex; align-items:center; gap:5px; cursor:pointer;"
+                    title="Ocultar los mensajes periódicos de conexión">
+                    <input type="checkbox" onchange="toggleHeartbeats(this)"> Ocultar Heartbeats
+                </label>
+                <button class="btn-drawer" id="btnPauseLogs" onclick="togglePauseLogs()">⏸ Pausar</button>
+                <button class="btn-drawer" onclick="copyLogs()">📋 Copiar</button>
+                <button class="btn-drawer" style="color:var(--error-color)" onclick="closeLogs()">❌</button>
+            </div>
+        </div>
+        <div id="logContainer" class="log-container">
+        </div>
+    </div>
+
+    <div id="chatWidget" class="chat-widget">
+        <button id="chatBubble" class="chat-bubble" onclick="toggleChat()">
+            <svg xmlns="http://www.w3.org/2000/svg" width="28" height="28" viewBox="0 0 24 24" fill="none"
+                stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                <path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"></path>
+            </svg>
+        </button>
+
+        <div id="chatWindow" class="chat-window" style="display:none;">
+            <div class="chat-header">
+                <h3>
+                    <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none"
+                        stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"
+                        style="vertical-align: middle; margin-right: 5px;">
+                        <circle cx="12" cy="12" r="10"></circle>
+                        <path d="M12 16v-4"></path>
+                        <path d="M12 8h.01"></path>
+                    </svg>
+                    Asistente Técnico
+                </h3>
+                <button class="btn-close-chat" onclick="toggleChat()">
+                    <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none"
+                        stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                        <line x1="18" y1="6" x2="6" y2="18"></line>
+                        <line x1="6" y1="6" x2="18" y2="18"></line>
+                    </svg>
+                </button>
+            </div>
+            <div id="chatBody" class="chat-body">
+                <div class="chat-message bot">Hola! Soy tu asistente. ¿En qué puedo ayudarte hoy con tus cargadores?
+                </div>
+            </div>
+            <div class="chat-footer">
+                <input type="text" id="chatInput" placeholder="Pregunta algo..." onkeypress="handleChatKey(event)">
+                <button id="btnSendChat" onclick="sendChatMessage()">
+                    <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none"
+                        stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"
+                        style="color: var(--accent-color);">
+                        <line x1="22" y1="2" x2="11" y2="13"></line>
+                        <polygon points="22 2 15 22 11 13 2 9 22 2"></polygon>
+                    </svg>
+                </button>
+            </div>
+        </div>
+    </div>
+
+    <div id="assetModal" class="modal-overlay" style="display:none;">
+        <div class="glass-panel modal-content" style="max-width: 600px;">
+            <div class="panel-header">
+                <h2 id="assetModalTitle">Nuevo Cargador</h2>
+            </div>
+            <div style="padding: 20px 0;">
+                <input type="text" id="assetIdInput" placeholder="Charger ID (Ej: CS-001)"
+                    style="width:100%; padding:10px; border-radius:8px; border:1px solid rgba(255,255,255,0.2); background:rgba(0,0,0,0.3); color:white; margin-bottom: 15px; box-sizing:border-box;">
+
+                <div style="display: flex; gap: 15px; margin-bottom: 15px;">
+                    <input type="text" id="assetNameInput" placeholder="Nombre (Ej: Parqueadero Norte)"
+                        style="width:50%; padding:10px; border-radius:8px; border:1px solid rgba(255,255,255,0.2); background:rgba(0,0,0,0.3); color:white; box-sizing:border-box;">
+                    <input type="text" id="assetLocInput" placeholder="Ubicación"
+                        style="width:50%; padding:10px; border-radius:8px; border:1px solid rgba(255,255,255,0.2); background:rgba(0,0,0,0.3); color:white; box-sizing:border-box;">
+                </div>
+                <div style="margin-bottom: 15px;">
+                    <input type="text" id="assetPhysInput" placeholder="Identificador Físico (Serial)"
+                        style="width:100%; padding:10px; border-radius:8px; border:1px solid rgba(255,255,255,0.2); background:rgba(0,0,0,0.3); color:white; box-sizing:border-box;">
+                </div>
+
+                <div style="display: flex; gap: 15px; margin-bottom: 15px;">
+                    <input type="number" step="any" id="assetLatInput" placeholder="Latitud"
+                        style="width:50%; padding:10px; border-radius:8px; border:1px solid rgba(255,255,255,0.2); background:rgba(0,0,0,0.3); color:white; box-sizing:border-box;">
+                    <input type="number" step="any" id="assetLngInput" placeholder="Longitud"
+                        style="width:50%; padding:10px; border-radius:8px; border:1px solid rgba(255,255,255,0.2); background:rgba(0,0,0,0.3); color:white; box-sizing:border-box;">
+                </div>
+
+                <div style="margin-bottom:20px;">
+                    <label style="color:#8b949e; font-size:12px; margin-bottom:5px; display:block;">Tarifa a
+                        Aplicar</label>
+                    <select id="assetTariff"
+                        style="width:100%; padding:10px; border-radius:8px; border:1px solid rgba(255,255,255,0.2); background:rgba(0,0,0,0.3); color:white;">
+                        <option value="">-- Sin tarifa (Usar cobro gratuito) --</option>
+                    </select>
+                </div>
+
+                <div style="display: flex; gap: 15px; margin-bottom: 20px;">
+                    <input type="text" id="assetModelInput" placeholder="Modelo o Marca"
+                        style="width:50%; padding:10px; border-radius:8px; border:1px solid rgba(255,255,255,0.2); background:rgba(0,0,0,0.3); color:white; box-sizing:border-box;">
+                    <select id="assetConnectorInput"
+                        style="width:50%; padding:10px; border-radius:8px; border:1px solid rgba(255,255,255,0.2); background:rgba(0,0,0,0.3); color:white; box-sizing:border-box;">
+                        <option value="" disabled selected>Tipo de Conector</option>
+                        <option value="Type 2">Type 2</option>
+                        <option value="CCS2">CCS2</option>
+                        <option value="GB/T">GB/T</option>
+                        <option value="CHAdeMO">CHAdeMO</option>
+                    </select>
+                </div>
+
+                <div style="display: flex; justify-content: flex-end; gap: 15px;">
+                    <button class="btn-refresh" style="background:var(--error-color)"
+                        onclick="closeAssetModal()">Cancelar</button>
+                    <button class="btn-refresh" style="background:var(--accent-color)"
+                        onclick="saveAsset()">Guardar</button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <div id="adminModal" class="modal-overlay" style="display:none;">
+        <div class="glass-panel modal-content" style="max-width: 500px;">
+            <div class="panel-header">
+                <h2 id="adminModalTitle">Nuevo Personal</h2>
+            </div>
+            <div style="padding: 20px 0;">
+                <input type="hidden" id="adminIdInput">
+                <input type="text" id="adminUsernameInput" placeholder="Nombre de Usuario"
+                    style="width:100%; padding:10px; border-radius:8px; border:1px solid rgba(255,255,255,0.2); background:rgba(0,0,0,0.3); color:white; margin-bottom: 15px; box-sizing:border-box;">
+
+                <input type="email" id="adminEmailInput" placeholder="Correo Electrónico"
+                    style="width:100%; padding:10px; border-radius:8px; border:1px solid rgba(255,255,255,0.2); background:rgba(0,0,0,0.3); color:white; margin-bottom: 15px; box-sizing:border-box;">
+
+                <select id="adminRoleSelect"
+                    style="width:100%; padding:10px; border-radius:8px; border:1px solid rgba(255,255,255,0.2); background:rgba(0,0,0,0.3); color:white; margin-bottom: 15px; box-sizing:border-box;">
+                    <option value="" disabled selected>Selecciona un rol</option>
+                    <option value="Super Admin">Super Admin</option>
+                    <option value="CPO">Operador (CPO)</option>
+                    <option value="Soporte / Instalador">Soporte / Instalador</option>
+                    <option value="Contabilidad">Contabilidad</option>
+                </select>
+
+                <div style="display: flex; justify-content: flex-end; gap: 15px;">
+                    <button class="btn-refresh" style="background:var(--error-color)"
+                        onclick="closeAdminModal()">Cancelar</button>
+                    <button class="btn-refresh" style="background:var(--accent-color)"
+                        onclick="saveAdmin()">Guardar</button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <div id="clientModal" class="modal-overlay" style="display:none;">
+        <div class="glass-panel modal-content" style="max-width: 500px;">
+            <div class="panel-header">
+                <h2 id="clientModalTitle">Nuevo Cliente</h2>
+            </div>
+            <div style="padding: 20px 0;">
+                <input type="hidden" id="clientIdInput">
+                <input type="text" id="clientUsernameInput" placeholder="Nombre completo del Cliente"
+                    style="width:100%; padding:10px; border-radius:8px; border:1px solid rgba(255,255,255,0.2); background:rgba(0,0,0,0.3); color:white; margin-bottom: 15px; box-sizing:border-box;">
+
+                <input type="email" id="clientEmailInput" placeholder="Correo Electrónico"
+                    style="width:100%; padding:10px; border-radius:8px; border:1px solid rgba(255,255,255,0.2); background:rgba(0,0,0,0.3); color:white; margin-bottom: 15px; box-sizing:border-box;">
+
+                <div style="display: flex; gap: 15px; margin-bottom: 15px;">
+                    <input type="text" id="clientIdTagInput" placeholder="IdTag (NFC/App)"
+                        style="width:70%; padding:10px; border-radius:8px; border:1px solid rgba(255,255,255,0.2); background:rgba(0,0,0,0.3); color:white; box-sizing:border-box;">
+
+                    <label style="display:flex; align-items:center; gap:5px; color:white; width:30%; font-size:14px;">
+                        <input type="checkbox" id="clientIsAuthorizedCheck"
+                            style="accent-color: var(--accent-color); width: 18px; height: 18px;"> Autorizado
+                    </label>
+                </div>
+
+                <div style="margin-bottom:20px;">
+                    <label style="color:#8b949e; font-size:12px; margin-bottom:5px; display:block;">Tarifa
+                        Asignada</label>
+                    <select id="clientTariffSelect"
+                        style="width:100%; padding:10px; border-radius:8px; border:1px solid rgba(255,255,255,0.2); background:rgba(0,0,0,0.3); color:white;">
+                        <option value="">-- Sin tarifa (Usar tarifa del cargador) --</option>
+                    </select>
+                </div>
+
+                <div style="display: flex; justify-content: flex-end; gap: 15px;">
+                    <button class="btn-refresh" style="background:var(--error-color)"
+                        onclick="closeClientModal()">Cancelar</button>
+                    <button class="btn-refresh" style="background:var(--accent-color)"
+                        onclick="saveClient()">Guardar</button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <div id="tariffModal" class="modal-overlay" style="display:none;">
+        <div class="glass-panel modal-content" style="max-width: 500px;">
+            <div class="panel-header">
+                <h2 id="tariffModalTitle">Nueva Tarifa</h2>
+            </div>
+            <div style="padding: 20px 0;">
+                <input type="hidden" id="tariffIdInput">
+                <input type="text" id="tariffName" placeholder="Ej: Tarifa Rápida DC (Centro)"
+                    style="width:100%; padding:10px; border-radius:8px; border:1px solid rgba(255,255,255,0.2); background:rgba(0,0,0,0.3); color:white; margin-bottom: 15px; box-sizing:border-box;">
+
+                <div style="display:flex; gap:10px; margin-bottom:15px;">
+                    <div style="flex:1">
+                        <label style="color:#8b949e; font-size:12px;">Precio por kWh ($)</label>
+                        <input type="number" step="0.01" id="tariffKwh" placeholder="0.30"
+                            style="width:100%; padding:10px; border-radius:8px; border:1px solid rgba(255,255,255,0.2); background:rgba(0,0,0,0.3); color:white; box-sizing:border-box;">
+                    </div>
+                    <div style="flex:1">
+                        <label style="color:#8b949e; font-size:12px;">Precio por Minuto ($)</label>
+                        <input type="number" step="0.01" id="tariffMin" placeholder="0.00"
+                            style="width:100%; padding:10px; border-radius:8px; border:1px solid rgba(255,255,255,0.2); background:rgba(0,0,0,0.3); color:white; box-sizing:border-box;">
+                    </div>
+                </div>
+
+                <div style="margin-bottom:20px;">
+                    <label style="color:#8b949e; font-size:12px;">Cargo de Conexión Fija ($)</label>
+                    <input type="number" step="0.01" id="tariffFlat" placeholder="1.50"
+                        style="width:100%; padding:10px; border-radius:8px; border:1px solid rgba(255,255,255,0.2); background:rgba(0,0,0,0.3); color:white; box-sizing:border-box;">
+                </div>
+
+                <div style="display: flex; justify-content: flex-end; gap: 15px;">
+                    <button class="btn-refresh" style="background:var(--error-color)"
+                        onclick="closeTariffModal()">Cancelar</button>
+                    <button class="btn-refresh" style="background:var(--accent-color)"
+                        onclick="saveTariff()">Guardar</button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script src="app.js?v=23"></script>
+</body>
+
+</html>

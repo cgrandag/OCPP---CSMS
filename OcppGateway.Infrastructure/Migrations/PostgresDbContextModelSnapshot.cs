@@ -1,0 +1,296 @@
+using System;
+using Microsoft.EntityFrameworkCore;
+using Microsoft.EntityFrameworkCore.Infrastructure;
+using Microsoft.EntityFrameworkCore.Storage.ValueConversion;
+using Npgsql.EntityFrameworkCore.PostgreSQL.Metadata;
+using OcppGateway.Infrastructure.Persistence;
+
+#nullable disable
+
+namespace OcppGateway.Infrastructure.Migrations
+{
+    [DbContext(typeof(PostgresDbContext))]
+    partial class PostgresDbContextModelSnapshot : ModelSnapshot
+    {
+        protected override void BuildModel(ModelBuilder modelBuilder)
+        {
+#pragma warning disable 612, 618
+            modelBuilder
+                .HasAnnotation("ProductVersion", "8.0.0")
+                .HasAnnotation("Relational:MaxIdentifierLength", 63);
+
+            NpgsqlModelBuilderExtensions.UseIdentityByDefaultColumns(modelBuilder);
+
+            modelBuilder.Entity("OcppGateway.Domain.Charger", b =>
+                {
+                    b.Property<string>("ChargePointId")
+                        .HasColumnType("text");
+
+                    b.Property<string>("ConnectorType")
+                        .HasColumnType("text");
+
+                    b.Property<decimal?>("CurrentPowerKw")
+                        .HasColumnType("numeric");
+
+                    b.Property<string>("FirmwareVersion")
+                        .HasColumnType("text");
+
+                    b.Property<bool>("IsOnline")
+                        .HasColumnType("boolean");
+
+                    b.Property<DateTime>("LastHeartbeat")
+                        .HasColumnType("timestamp with time zone");
+
+                    b.Property<string>("LatestErrorCode")
+                        .IsRequired()
+                        .HasColumnType("text");
+
+                    b.Property<string>("LatestInfo")
+                        .IsRequired()
+                        .HasColumnType("text");
+
+                    b.Property<double?>("Latitude")
+                        .HasColumnType("double precision");
+
+                    b.Property<string>("Location")
+                        .IsRequired()
+                        .HasColumnType("text");
+
+                    b.Property<double?>("Longitude")
+                        .HasColumnType("double precision");
+
+                    b.Property<string>("Model")
+                        .HasColumnType("text");
+
+                    b.Property<string>("Name")
+                        .IsRequired()
+                        .HasColumnType("text");
+
+                    b.Property<string>("NetworkType")
+                        .HasColumnType("text");
+
+                    b.Property<string>("PhysicalIdentifier")
+                        .HasColumnType("text");
+
+                    b.Property<int?>("Rssi")
+                        .HasColumnType("integer");
+
+                    b.Property<string>("Status")
+                        .IsRequired()
+                        .HasColumnType("text");
+
+                    b.Property<int?>("TariffId")
+                        .HasColumnType("integer");
+
+                    b.HasKey("ChargePointId");
+
+                    b.HasIndex("TariffId");
+
+                    b.ToTable("Chargers");
+                });
+
+            modelBuilder.Entity("OcppGateway.Domain.Entities.User", b =>
+                {
+                    b.Property<int>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("integer");
+
+                    NpgsqlPropertyBuilderExtensions.UseIdentityByDefaultColumn(b.Property<int>("Id"));
+
+                    b.Property<DateTime>("CreatedAt")
+                        .HasColumnType("timestamp with time zone");
+
+                    b.Property<string>("Email")
+                        .IsRequired()
+                        .HasColumnType("text");
+
+                    b.Property<string>("IdTag")
+                        .HasColumnType("text");
+
+                    b.Property<bool>("IsAuthorized")
+                        .HasColumnType("boolean");
+
+                    b.Property<string>("PasswordHash")
+                        .IsRequired()
+                        .HasColumnType("text");
+
+                    b.Property<string>("Role")
+                        .IsRequired()
+                        .HasColumnType("text");
+
+                    b.Property<int?>("TariffId")
+                        .HasColumnType("integer");
+
+                    b.Property<string>("Username")
+                        .IsRequired()
+                        .HasColumnType("text");
+
+                    b.HasKey("Id");
+
+                    b.HasIndex("TariffId");
+
+                    b.ToTable("Users");
+                });
+
+            modelBuilder.Entity("OcppGateway.Domain.MeterValue", b =>
+                {
+                    b.Property<long>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("bigint");
+
+                    NpgsqlPropertyBuilderExtensions.UseIdentityByDefaultColumn(b.Property<long>("Id"));
+
+                    b.Property<string>("ChargePointId")
+                        .IsRequired()
+                        .HasColumnType("text");
+
+                    b.Property<int>("ConnectorId")
+                        .HasColumnType("integer");
+
+                    b.Property<string>("Measurand")
+                        .IsRequired()
+                        .HasColumnType("text");
+
+                    b.Property<DateTime>("Timestamp")
+                        .HasColumnType("timestamp with time zone");
+
+                    b.Property<int>("TransactionId")
+                        .HasColumnType("integer");
+
+                    b.Property<string>("Unit")
+                        .IsRequired()
+                        .HasColumnType("text");
+
+                    b.Property<string>("Value")
+                        .IsRequired()
+                        .HasColumnType("text");
+
+                    b.HasKey("Id");
+
+                    b.ToTable("MeterValues");
+                });
+
+            modelBuilder.Entity("OcppGateway.Domain.Tariff", b =>
+                {
+                    b.Property<int>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("integer");
+
+                    NpgsqlPropertyBuilderExtensions.UseIdentityByDefaultColumn(b.Property<int>("Id"));
+
+                    b.Property<decimal>("FlatFee")
+                        .HasColumnType("numeric");
+
+                    b.Property<string>("Name")
+                        .IsRequired()
+                        .HasColumnType("text");
+
+                    b.Property<decimal>("PricePerKwh")
+                        .HasColumnType("numeric");
+
+                    b.Property<decimal>("PricePerMinute")
+                        .HasColumnType("numeric");
+
+                    b.HasKey("Id");
+
+                    b.ToTable("Tariffs");
+                });
+
+            modelBuilder.Entity("OcppGateway.Domain.Transaction", b =>
+                {
+                    b.Property<int>("TransactionId")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("integer");
+
+                    NpgsqlPropertyBuilderExtensions.UseIdentityByDefaultColumn(b.Property<int>("TransactionId"));
+
+                    b.Property<string>("ChargePointId")
+                        .IsRequired()
+                        .HasColumnType("text");
+
+                    b.Property<int>("ConnectorId")
+                        .HasColumnType("integer");
+
+                    b.Property<decimal>("FlatFee")
+                        .HasColumnType("numeric");
+
+                    b.Property<string>("IdTag")
+                        .IsRequired()
+                        .HasColumnType("text");
+
+                    b.Property<decimal>("PricePerKwh")
+                        .HasColumnType("numeric");
+
+                    b.Property<decimal>("PricePerMinute")
+                        .HasColumnType("numeric");
+
+                    b.Property<int>("StartMeterValue")
+                        .HasColumnType("integer");
+
+                    b.Property<DateTime>("StartTime")
+                        .HasColumnType("timestamp with time zone");
+
+                    b.Property<int>("StopMeterValue")
+                        .HasColumnType("integer");
+
+                    b.Property<string>("StopReason")
+                        .IsRequired()
+                        .HasColumnType("text");
+
+                    b.Property<DateTime?>("StopTime")
+                        .HasColumnType("timestamp with time zone");
+
+                    b.Property<decimal>("TotalCost")
+                        .HasColumnType("numeric");
+
+                    b.HasKey("TransactionId");
+
+                    b.HasIndex("ChargePointId");
+
+                    b.ToTable("Transactions");
+                });
+
+            modelBuilder.Entity("OcppGateway.Domain.Charger", b =>
+                {
+                    b.HasOne("OcppGateway.Domain.Tariff", "Tariff")
+                        .WithMany("Chargers")
+                        .HasForeignKey("TariffId")
+                        .OnDelete(DeleteBehavior.SetNull);
+
+                    b.Navigation("Tariff");
+                });
+
+            modelBuilder.Entity("OcppGateway.Domain.Entities.User", b =>
+                {
+                    b.HasOne("OcppGateway.Domain.Tariff", "Tariff")
+                        .WithMany()
+                        .HasForeignKey("TariffId")
+                        .OnDelete(DeleteBehavior.SetNull);
+
+                    b.Navigation("Tariff");
+                });
+
+            modelBuilder.Entity("OcppGateway.Domain.Transaction", b =>
+                {
+                    b.HasOne("OcppGateway.Domain.Charger", "Charger")
+                        .WithMany("Transactions")
+                        .HasForeignKey("ChargePointId")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired();
+
+                    b.Navigation("Charger");
+                });
+
+            modelBuilder.Entity("OcppGateway.Domain.Charger", b =>
+                {
+                    b.Navigation("Transactions");
+                });
+
+            modelBuilder.Entity("OcppGateway.Domain.Tariff", b =>
+                {
+                    b.Navigation("Chargers");
+                });
+#pragma warning restore 612, 618
+        }
+    }
+}
